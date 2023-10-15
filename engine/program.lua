@@ -99,6 +99,13 @@ function program.update(dt)
             canvasWidth = windowSize.x
             canvasHeight = windowSize.y
         end
+        if (canvasWidth == 0) then
+            canvasWidth = 1
+        end
+
+        if (canvasHeight == 0) then
+            canvasHeight = 1
+        end
         canvas = love.graphics.newCanvas(canvasWidth, canvasHeight)
         imgui.Image(canvas, { canvasWidth, canvasHeight })
         imgui.End()
