@@ -9,6 +9,10 @@ local imgui
 if (not config.build) then 
     imguiRenderer = require "imguiRenderer"
     imgui = require "cimgui" -- cimgui is the folder containing the Lua module (the "src" folder in the github repository)
+
+    -- for k, v in pairs(imgui) do
+    --     print(k, v)
+    -- end
 end
 
 local Entity = require "Entity"
@@ -16,7 +20,6 @@ local Component = require "Component"
 local world = require "world"
 
 local program = {
-
 }
 
 function program.init()
@@ -86,6 +89,33 @@ function program.init()
         }))
         world:addEntity(entity)
     end
+    local button = Entity:new()
+    button:addComponent(Component:new("transform", {
+        position = {
+            x = 100, y = 100
+        },
+        rotation = 0,
+        size = {
+            w = 100, h = 30
+        }
+    }))
+    button:addComponent(Component:new("UIElement", {
+        type = "button",
+        text = "Start Game",
+        state = "normal"
+    }))
+    button:addComponent(Component:new("Clickable", {
+        region = {
+            x = 100, y = 100, width = 100, height = 30
+        },
+        callback = function() 
+            print("clicked")
+            -- Start the game or whatever action you want
+        end,
+        active = true,
+        mousePressedInside = false
+    }))
+    world:addEntity(button)
 end 
 
 function program.update(dt)
@@ -94,6 +124,11 @@ function program.update(dt)
         imguiRenderer.update(dt)
         world:drawGUI()
         imgui.Begin("ImGui Window")
+        -- print(imgui.GetContentRegionAvail())
+        local cursorScreenPos = imgui.GetCursorScreenPos()
+        config.sceneOffset.x = cursorScreenPos.x
+        config.sceneOffset.y = cursorScreenPos.y
+        
         local windowSize = imgui.GetContentRegionAvail()
         if canvasWidth ~= windowSize.x or canvasHeight ~= windowSize.y then
             canvasWidth = windowSize.x
@@ -108,6 +143,7 @@ function program.update(dt)
         end
         canvas = love.graphics.newCanvas(canvasWidth, canvasHeight)
         imgui.Image(canvas, { canvasWidth, canvasHeight })
+        -- print()
         imgui.End()
     end
 end

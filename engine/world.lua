@@ -57,6 +57,40 @@ function world:update(dt)
             transform.position.y = transform.position.y + rigidBody.velocity.y * dt
             transform.rotation = (transform.rotation + rigidBody.angularVelocity * dt) % 360
         end
+
+        if components.Clickable then
+            local clickable = components.Clickable
+            local mouseX, mouseY = love.mouse.getPosition()
+            mouseX = mouseX - config.sceneOffset.x
+            mouseY = mouseY - config.sceneOffset.y
+
+            if clickable and clickable.active then 
+                local inside = mouseX > clickable.region.x - clickable.region.width / 2 and 
+                mouseX < clickable.region.x + clickable.region.width / 2 and 
+                mouseY > clickable.region.y - clickable.region.height / 2 and 
+                mouseY < clickable.region.y + clickable.region.height / 2 
+
+                if inside then
+                    -- When the mouse is pressed
+                    if love.mouse.isDown(1) and inside and not clickable.mousePressedInside then
+                        clickable.mousePressedInside = true
+                    end
+
+                    -- When the mouse is released
+                    if clickable.mousePressedInside and not love.mouse.isDown(1) and inside then
+                        clickable.callback()
+                        clickable.mousePressedInside = false -- Reset the state
+                    end
+
+                    -- If the mouse is released outside of the clickable region
+                    if clickable.mousePressedInside and not love.mouse.isDown(1) and not inside then
+                        clickable.mousePressedInside = false -- Reset the state but don't call the callback
+                    end
+                else 
+                    clickable.mousePressedInside = false -- Reset the state but don't call the callback
+                end
+            end
+        end
     end
 end
 
@@ -70,6 +104,10 @@ function world:draw()
             love.graphics.translate(centerX, centerY)
             love.graphics.rotate(math.rad(data.rotation))
             love.graphics.rectangle("line", -data.size.w / 2, -data.size.h / 2, data.size.w, data.size.h)
+        end
+
+        if components.UIElement and components.transform then
+            love.graphics.printf(components.UIElement.text, -components.transform.size.w / 2, -components.transform.size.h / 4, components.transform.size.w, "center")
         end
         
         if components.transform and components.sprite then
@@ -90,6 +128,20 @@ function world:draw()
             end
         end
         love.graphics.pop()
+
+        if components.Clickable then
+            love.graphics.push()
+            local data = components.Clickable
+            local centerX = data.region.x
+            local centerY = data.region.y
+            love.graphics.translate(centerX, centerY)
+            -- love.graphics.push();
+            love.graphics.setColor(1, 0, 0, 1)
+            love.graphics.rectangle("line", -data.region.width / 2, -data.region.height / 2, data.region.width, data.region.height)
+            love.graphics.setColor(1, 1, 1, 1)
+            -- love.graphics.pop();
+            love.graphics.pop()
+        end
     end
 end
 
@@ -139,6 +191,15 @@ function drawSpriteGUI(sprite, guid)
     end
 end
 
+function drawClickableGUI(clickable, guid)
+    local label = "Clickable"
+    if imgui.TreeNode_Str(label .. "##" .. guid) then
+        drawField("active", clickable, {"active"})
+        drawField("region", clickable.region, {"x", "y", "width", "height"})
+        imgui.TreePop()
+    end
+end
+
 function world:drawGUI()
     imgui.Begin("Entities")
     for guid, entity in pairs(self.entities) do
@@ -151,6 +212,9 @@ function world:drawGUI()
             end
             if self.components[guid].sprite then
                 drawSpriteGUI(self.components[guid].sprite, guid)
+            end
+            if self.components[guid].Clickable then
+                drawClickableGUI(self.components[guid].Clickable, guid)
             end
             imgui.TreePop()
         end
