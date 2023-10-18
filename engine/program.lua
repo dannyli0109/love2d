@@ -5,11 +5,12 @@ local canvas
 local canvasWidth = 1200
 local canvasHeight = 700
 local imgui
+local LogManager;
 
-if (not config.build) then 
+if (not config.build) then
     imguiRenderer = require "imguiRenderer"
     imgui = require "cimgui" -- cimgui is the folder containing the Lua module (the "src" folder in the github repository)
-
+    LogManager = require "logManager"
     -- for k, v in pairs(imgui) do
     --     print(k, v)
     -- end
@@ -18,6 +19,7 @@ end
 local Entity = require "Entity"
 local Component = require "Component"
 local world = require "world"
+local UIFactory = require "uiFactory"
 
 local program = {
 }
@@ -87,36 +89,47 @@ function program.init()
             frameHeight = frameHeight,
             renderScale = 1,
         }))
+
+        entity:addComponent(Component:new("Visibility", {
+            visible = true
+        }))
         world:addEntity(entity)
     end
-    local button = Entity:new()
-    button:addComponent(Component:new("transform", {
+
+    local soundButton = UIFactory.createButton({
+        position = {
+            x = 100, y = 200
+        },
+        size = {
+            w = 100, h = 30
+        },
+        text = "Sound",
+        callback = function()
+            print("clicked soundButton")
+            -- Start the game or whatever action you want
+        end,
+        visible = false
+    })
+    world:addEntity(soundButton)
+
+
+    local optionButton = UIFactory.createButton({
         position = {
             x = 100, y = 100
         },
-        rotation = 0,
         size = {
             w = 100, h = 30
-        }
-    }))
-    button:addComponent(Component:new("UIElement", {
-        type = "button",
-        text = "Start Game",
-        state = "normal"
-    }))
-    button:addComponent(Component:new("Clickable", {
-        region = {
-            x = 100, y = 100, width = 100, height = 30
         },
-        callback = function() 
-            print("clicked")
+        text = "Options",
+        callback = function()
+            print("clicked optionButton")
             -- Start the game or whatever action you want
         end,
-        active = true,
-        mousePressedInside = false
-    }))
-    world:addEntity(button)
-end 
+        submenu = {},
+        visible = true
+    })
+    world:addEntity(optionButton)
+end
 
 function program.update(dt)
     world:update(dt)
@@ -128,7 +141,7 @@ function program.update(dt)
         local cursorScreenPos = imgui.GetCursorScreenPos()
         config.sceneOffset.x = cursorScreenPos.x
         config.sceneOffset.y = cursorScreenPos.y
-        
+
         local windowSize = imgui.GetContentRegionAvail()
         if canvasWidth ~= windowSize.x or canvasHeight ~= windowSize.y then
             canvasWidth = windowSize.x
@@ -145,6 +158,8 @@ function program.update(dt)
         imgui.Image(canvas, { canvasWidth, canvasHeight })
         -- print()
         imgui.End()
+
+        LogManager:draw()
     end
 end
 
@@ -153,13 +168,13 @@ function program.draw()
     love.graphics.clear()
     world:draw()
     love.graphics.setCanvas()
-    if (config.build) then 
+    if (config.build) then
         love.graphics.draw(canvas)
     end
 end
 
 function program.drawGUI()
-    if (not config.build) then 
+    if (not config.build) then
         imguiRenderer.draw()
     end
 end

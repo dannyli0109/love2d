@@ -8,5 +8,9 @@
     ],
     "Lua.diagnostics.globals": [
         "M"
+    ],
+    "Lua.diagnostics.disable": [
+        "inject-field",
+        "duplicate-set-field"
     ]
 }
